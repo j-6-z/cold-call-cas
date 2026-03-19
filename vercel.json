@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "name": "jayisaac-coldcall",
+  "builds": [
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/cassandra",
+      "dest": "/cassandra_script.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
