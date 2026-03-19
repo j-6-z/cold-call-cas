@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAYISAAC AI — Cold Call Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400&family=Barlow+Condensed:wght@500;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080810;
+  --surface: #0e0e1a;
+  --card: #12121e;
+  --border: #1f1f35;
+  --border2: #2a2a45;
+  --accent: #00d4ff;
+  --accent-dim: rgba(0,212,255,0.07);
+  --accent-glow: rgba(0,212,255,0.18);
+  --purple: #8b5cf6;
+  --green: #00ff88;
+  --green-dim: rgba(0,255,136,0.07);
+  --red: #ff4060;
+  --red-dim: rgba(255,64,96,0.07);
+  --yellow: #ffcc00;
+  --yellow-dim: rgba(255,204,0,0.07);
+  --text: #dde0f0;
+  --text2: #8888aa;
+  --text3: #44445a;
+  --radius: 10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;line-height:1.5}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.04) 2px,rgba(0,0,0,0.04) 4px);pointer-events:none;z-index:9999}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.02) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+
+.shell{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:rgba(8,8,16,0.92);backdrop-filter:blur(14px);position:sticky;top:0;z-index:100;gap:16px}
+.logo-mark{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:17px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);flex-shrink:0}
+.logo-mark span{color:var(--text3);font-weight:500}
+.topbar-status{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:0.1em;flex:1;text-align:center}
+.topbar-inputs{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tb-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;white-space:nowrap}
+.tb-input{background:var(--card);border:1px solid var(--border2);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 10px;border-radius:6px;outline:none;transition:border-color 0.2s,box-shadow 0.2s}
+.tb-input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
+#callerName{width:120px}
+#callerCity{width:120px}
+
+.main{flex:1;display:grid;grid-template-columns:210px 1fr 230px;min-height:0}
+
+.sidebar-left{border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;max-height:calc(100vh - 53px)}
+.sl-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);padding:0 8px;margin:14px 0 6px}
+.sl-label:first-child{margin-top:0}
+.ind-btn{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:8px;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--text2);font-family:'Barlow',sans-serif;font-size:13px;font-weight:600;text-align:left;width:100%;transition:all 0.14s}
+.ind-btn:hover{background:var(--card);color:var(--text);border-color:var(--border)}
+.ind-btn.active{background:var(--accent-dim);color:var(--accent);border-color:rgba(0,212,255,0.22)}
+.ind-icon{font-size:14px;flex-shrink:0}
+.spacer{flex:1}
+
+.center{padding:24px 28px;overflow-y:auto;max-height:calc(100vh - 53px)}
+
+.select-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:62vh;text-align:center;animation:fadeUp 0.4s ease}
+.select-screen h1{font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;text-transform:uppercase;letter-spacing:0.04em;line-height:1;margin-bottom:10px}
+.select-screen h1 span{color:var(--accent)}
+.select-screen p{font-size:14px;color:var(--text2);margin-bottom:36px;max-width:420px;line-height:1.7}
+.ind-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:700px}
+.ind-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 12px;cursor:pointer;transition:all 0.17s;text-align:center}
+.ind-card:hover{border-color:var(--accent);background:var(--accent-dim);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,212,255,0.1)}
+.ind-card .ic-icon{font-size:26px;margin-bottom:7px}
+.ind-card .ic-name{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text)}
+
+.prog-wrap{margin-bottom:22px}
+.prog-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.prog-stage{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent)}
+.prog-pct{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)}
+.prog-track{height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--accent));border-radius:2px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1);box-shadow:0 0 8px var(--accent-glow)}
+
+.script-block{animation:fadeUp 0.22s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.script-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:26px 26px 22px;margin-bottom:18px;position:relative;overflow:hidden}
+.script-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--purple),var(--accent))}
+.card-eyebrow{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);margin-bottom:13px}
+.script-text{font-size:17px;font-weight:400;line-height:1.82;color:var(--text)}
+.hl{color:var(--accent);font-weight:700}
+.hl-name{color:var(--yellow);font-weight:700;font-style:italic}
+.hl-price{color:var(--green);font-weight:700}
+.hl-stat{color:var(--yellow);font-weight:600}
+
+.stat-callout{margin-top:16px;padding:13px 16px;background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.12);border-radius:8px;display:flex;gap:10px;align-items:flex-start}
+.stat-callout-icon{font-size:13px;flex-shrink:0;margin-top:1px}
+.stat-callout-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);line-height:1.65}
+.stat-callout-text strong{color:var(--accent)}
+
+.tip-card{background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.18);border-radius:8px;padding:13px 16px;margin-top:14px;display:flex;gap:10px;align-items:flex-start}
+.tip-icon{font-size:13px;flex-shrink:0;margin-top:1px}
+.tip-text{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);line-height:1.65}
+.tip-text strong{color:var(--purple)}
+
+.ah-box{margin-top:14px;padding:11px 15px;background:rgba(255,64,96,0.04);border:1px solid rgba(255,64,96,0.14);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);line-height:1.6}
+.ah-box strong{color:var(--red);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;display:block;margin-bottom:4px}
+
+.resp-section{margin-bottom:18px}
+.resp-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text3);margin-bottom:9px}
+.resp-grid{display:flex;flex-direction:column;gap:7px}
+.resp-btn{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 15px;cursor:pointer;text-align:left;width:100%;font-family:'Barlow',sans-serif;transition:all 0.14s ease;position:relative;overflow:hidden}
+.resp-btn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;transition:width 0.18s ease}
+.resp-btn.pos{--col:var(--green);--col-dim:var(--green-dim)}
+.resp-btn.neg{--col:var(--red);--col-dim:var(--red-dim)}
+.resp-btn.neu{--col:var(--yellow);--col-dim:var(--yellow-dim)}
+.resp-btn:hover{border-color:var(--col);background:var(--col-dim);transform:translateX(3px)}
+.resp-btn:hover::before{width:3px;background:var(--col)}
+.resp-emoji{font-size:17px;flex-shrink:0}
+.resp-body{flex:1;min-width:0}
+.resp-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.resp-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3)}
+.resp-arrow{font-size:13px;color:var(--text3);transition:color 0.14s,transform 0.14s}
+.resp-btn:hover .resp-arrow{color:var(--col);transform:translateX(3px)}
+
+.nav-strip{display:flex;gap:8px;flex-wrap:wrap}
+.nav-btn{padding:8px 16px;border-radius:7px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border:1px solid var(--border2);background:var(--card);color:var(--text2);transition:all 0.14s}
+.nav-btn:hover{color:var(--text);border-color:var(--text3)}
+
+.outcome-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;text-align:center;animation:fadeUp 0.3s ease}
+.outcome-emoji{font-size:72px;margin-bottom:18px;line-height:1}
+.outcome-title{font-family:'Barlow Condensed',sans-serif;font-size:52px;font-weight:900;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;line-height:1}
+.outcome-title.win{color:var(--green)}.outcome-title.loss{color:var(--red)}.outcome-title.cb{color:var(--yellow)}
+.outcome-sub{font-size:13px;color:var(--text2);max-width:400px;line-height:1.75;margin-bottom:26px;font-family:'JetBrains Mono',monospace}
+.path-log{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:22px;text-align:left;width:100%;max-width:440px}
+.path-log h4{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);margin-bottom:11px}
+.path-entry{display:flex;align-items:center;gap:9px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);padding:5px 0;border-bottom:1px solid var(--border)}
+.path-entry:last-child{border-bottom:none}
+.path-dot{color:var(--accent);font-size:8px}
+.btn-primary{padding:12px 26px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border:none;background:linear-gradient(135deg,var(--purple),#6d28d9);color:#fff;transition:opacity 0.14s,transform 0.14s;box-shadow:0 4px 20px rgba(139,92,246,0.28)}
+.btn-primary:hover{opacity:0.87;transform:translateY(-1px)}
+
+.sidebar-right{border-left:1px solid var(--border);padding:18px 14px;overflow-y:auto;max-height:calc(100vh - 53px)}
+.sr-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);margin:14px 0 8px}
+.sr-label:first-child{margin-top:0}
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:4px}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 8px;text-align:center}
+.stat-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;line-height:1;margin-bottom:2px}
+.stat-num.green{color:var(--green)}.stat-num.red{color:var(--red)}.stat-num.yellow{color:var(--yellow)}.stat-num.accent{color:var(--accent)}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em}
+.log-entries{display:flex;flex-direction:column;gap:5px}
+.log-pill{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2);flex-wrap:wrap}
+.log-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.log-dot.win{background:var(--green);box-shadow:0 0 5px var(--green)}.log-dot.loss{background:var(--red)}.log-dot.cb{background:var(--yellow)}
+.log-time{margin-left:auto;color:var(--text3);font-size:9px}
+.log-ind{font-size:9px;color:var(--text3);padding:1px 5px;background:var(--surface);border-radius:3px}
+.empty-log{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);text-align:center;padding:18px 8px;line-height:1.75}
+.obj-ref{margin-top:4px}
+.obj-ref-item{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);padding:6px 6px;border-bottom:1px solid var(--border);cursor:pointer;transition:color 0.13s;line-height:1.5}
+.obj-ref-item:hover{color:var(--accent)}.obj-ref-item:last-child{border-bottom:none}
+.conv-rate{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px;text-align:center}
+.conv-pct{font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:900;color:var(--purple)}
+.conv-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-top:2px}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<div class="topbar">
+  <div class="logo-mark">JAYISAAC <span>AI</span></div>
+  <div class="topbar-status" id="topbarStatus">SELECT AN INDUSTRY TO BEGIN</div>
+  <div class="topbar-inputs">
+    <span class="tb-label">Rep</span>
+    <input class="tb-input" id="callerName" type="text" placeholder="Your name" />
+    <span class="tb-label">City</span>
+    <input class="tb-input" id="callerCity" type="text" placeholder="e.g. Dallas" />
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="sidebar-left">
+    <div class="sl-label">Industries</div>
+    <button class="ind-btn" data-industry="plumber"><span class="ind-icon">🔧</span> Plumbers</button>
+    <button class="ind-btn" data-industry="electrician"><span class="ind-icon">⚡</span> Electricians</button>
+    <button class="ind-btn" data-industry="hvac"><span class="ind-icon">❄️</span> HVAC</button>
+    <button class="ind-btn" data-industry="roofer"><span class="ind-icon">🏠</span> Roofers</button>
+    <button class="ind-btn" data-industry="garage"><span class="ind-icon">🚗</span> Garage Door</button>
+    <button class="ind-btn" data-industry="landscape"><span class="ind-icon">🌿</span> Landscapers</button>
+    <button class="ind-btn" data-industry="pest"><span class="ind-icon">🐛</span> Pest Control</button>
+    <button class="ind-btn" data-industry="locksmith"><span class="ind-icon">🔑</span> Locksmiths</button>
+    <button class="ind-btn" data-industry="contractor"><span class="ind-icon">🏗️</span> Gen. Contractors</button>
+    <button class="ind-btn" data-industry="appliance"><span class="ind-icon">🔩</span> Appliance Repair</button>
+    <div class="spacer"></div>
+    <div class="sl-label">Session</div>
+    <button class="ind-btn" id="resetBtn" style="color:var(--red);display:none"><span class="ind-icon">↩</span> Switch Industry</button>
+  </div>
+
+  <div class="center" id="center">
+    <div class="select-screen">
+      <div style="font-size:52px;margin-bottom:14px">📞</div>
+      <h1>Cold Call<br><span>Command Center</span></h1>
+      <p>North America-wide. Pick your industry, enter your city, and run the script. Every response, every objection — fully mapped.</p>
+      <div class="ind-grid" id="quickGrid"></div>
+    </div>
+  </div>
+
+  <div class="sidebar-right">
+    <div class="sr-label">Session Stats</div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-num accent" id="statTotal">0</div><div class="stat-label">Calls</div></div>
+      <div class="stat-box"><div class="stat-num green" id="statWins">0</div><div class="stat-label">Closed</div></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-num yellow" id="statCbs">0</div><div class="stat-label">Callbacks</div></div>
+      <div class="stat-box"><div class="stat-num red" id="statLoss">0</div><div class="stat-label">No</div></div>
+    </div>
+    <div class="sr-label">Conversion Rate</div>
+    <div class="conv-rate">
+      <div class="conv-pct" id="convRate">—</div>
+      <div class="conv-lbl">Close Rate This Session</div>
+    </div>
+
+    <div class="sr-label">Call Log</div>
+    <div class="log-entries" id="logEntries">
+      <div class="empty-log">No calls yet.<br>Start dialing.</div>
+    </div>
+
+    <div class="sr-label">Objection Quick-Ref</div>
+    <div class="obj-ref">
+      <div class="obj-ref-item">⏱ No time right now</div>
+      <div class="obj-ref-item">👤 Already have a receptionist</div>
+      <div class="obj-ref-item">💸 Too expensive</div>
+      <div class="obj-ref-item">🤖 Sounds too robotic</div>
+      <div class="obj-ref-item">📧 Just send me info</div>
+      <div class="obj-ref-item">🤔 Need to think about it</div>
+      <div class="obj-ref-item">👥 Need to ask my partner</div>
+      <div class="obj-ref-item">❓ Won't work for my biz</div>
+      <div class="obj-ref-item">📉 Don't see the problem</div>
+      <div class="obj-ref-item">👋 Wants social proof</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+var INDUSTRIES = {
+  plumber: {
+    name:'Plumbers', icon:'🔧', jobValue:'$500–$3,000',
+    painLine:'when you\'re elbow-deep in a job — how do you handle calls coming in at the same time?',
+    urgencyLine:'Plumbing emergencies don\'t wait. After two rings with no answer, that customer is already calling the next plumber on Google.',
+    statLine:'The average plumber misses 6–10 calls a week. At $800 a job, that\'s up to $8,000 a week walking out the door.',
+    afterHours:'burst pipes, flooding, no hot water, sewage backups'
+  },
+  electrician: {
+    name:'Electricians', icon:'⚡', jobValue:'$300–$4,000',
+    painLine:'when you\'re inside a panel or up on a ladder — what happens to calls coming in?',
+    urgencyLine:'Power outages, sparking panels, tripped breakers — those customers need a human voice in seconds, not voicemail.',
+    statLine:'Electricians working solo miss up to 40% of inbound calls. Every missed call is a potential $1,500 panel job gone.',
+    afterHours:'power outages, sparking outlets, tripped breakers, no power'
+  },
+  hvac: {
+    name:'HVAC', icon:'❄️', jobValue:'$300–$5,000',
+    painLine:'peak season — heat waves, deep freezes — how many calls are slipping through while your guys are on jobs?',
+    urgencyLine:'A missed furnace call or AC call during a heat wave is a $2,000 job that goes to your competitor in under 60 seconds.',
+    statLine:'HVAC companies lose an estimated $30,000–$80,000 per year in missed emergency calls alone.',
+    afterHours:'furnace failures, no AC in summer, frozen pipes, emergency tune-ups'
+  },
+  roofer: {
+    name:'Roofers', icon:'🏠', jobValue:'$5,000–$20,000',
+    painLine:'after a big storm when every homeowner in the area is calling at once — how are you capturing all of those leads?',
+    urgencyLine:'Storm season is a sprint. Every missed call is a $10,000 job your competitor is quoting while you\'re on a roof.',
+    statLine:'A single missed storm-damage lead can be worth $15,000+. Companies that answer every call book 3x more jobs post-storm.',
+    afterHours:'storm damage, active leaks, insurance estimate requests, emergency tarping'
+  },
+  garage: {
+    name:'Garage Door', icon:'🚗', jobValue:'$200–$1,500',
+    painLine:'when your tech is mid-install on one job and a new call comes in — what happens to it?',
+    urgencyLine:'A broken spring means the customer can\'t get their car out. They\'re calling every garage door company until someone answers.',
+    statLine:'Companies that answer within 3 rings close 70% more jobs than those who don\'t — the job is simple, the bottleneck is answering.',
+    afterHours:'broken springs, snapped cables, stuck doors, broken openers'
+  },
+  landscape: {
+    name:'Landscapers', icon:'🌿', jobValue:'$500–$8,000',
+    painLine:'spring season when every homeowner is calling for quotes at the same time — how are you managing that volume?',
+    urgencyLine:'Landscaping is seasonal — a missed quote request in spring can be $5,000 in work that goes straight to your competitor.',
+    statLine:'Landscapers who follow up with leads within 5 minutes are 9x more likely to book. An AI receptionist captures and books instantly.',
+    afterHours:'spring cleanups, snow removal requests, urgent quote calls, storm cleanup'
+  },
+  pest: {
+    name:'Pest Control', icon:'🐛', jobValue:'$150–$800',
+    painLine:'pest calls are usually urgent and emotional — bed bugs, wasps, rodents — how do you handle after-hours requests?',
+    urgencyLine:'Nobody discovers a bed bug infestation and calmly waits for a callback. They\'re calling every pest company until someone answers.',
+    statLine:'Pest control companies with 24/7 answering book 35% more jobs than competitors who rely on voicemail.',
+    afterHours:'bed bugs, wasp nests, rodent sightings, urgent infestations'
+  },
+  locksmith: {
+    name:'Locksmiths', icon:'🔑', jobValue:'$100–$500',
+    painLine:'for lockouts — midnight calls, people stuck outside their car or house — how are those getting answered?',
+    urgencyLine:'Lockouts are 100% emergency calls. If you don\'t pick up within 60 seconds, they\'ve already called the next locksmith.',
+    statLine:'Locksmiths who answer every call do 2–3x the volume of competitors on voicemail. The bottleneck is just answering.',
+    afterHours:'car lockouts, house lockouts, broken keys, emergency re-keys'
+  },
+  contractor: {
+    name:'General Contractors', icon:'🏗️', jobValue:'$5,000–$50,000',
+    painLine:'when you\'re on a job site for 8 hours with your hands full — who\'s handling new lead calls coming in?',
+    urgencyLine:'Renovation leads go cold in under an hour. A homeowner who doesn\'t get a callback same-day has already booked someone else.',
+    statLine:'GCs who respond to leads within 5 minutes are 8x more likely to win the job. Most are calling back 24–48 hours later.',
+    afterHours:'new project inquiries, urgent repair quotes, insurance work, storm damage'
+  },
+  appliance: {
+    name:'Appliance Repair', icon:'🔩', jobValue:'$150–$600',
+    painLine:'when you\'re in the middle of a repair and a new call comes in — what happens to it?',
+    urgencyLine:'A flooded dishwasher or broken dryer with a family of five waiting isn\'t a "call us back tomorrow" situation.',
+    statLine:'Appliance repair shops that answer every call book 50% more same-day appointments than those that don\'t.',
+    afterHours:'broken washers, fridge failures, dishwasher floods, no heat from dryer'
+  }
+};
+
+function buildScript(ind) {
+  var d = INDUSTRIES[ind];
+  return {
+    opener:{
+      id:'opener', stage:'Opener', progress:8, title:'Opening Line',
+      text:'"Good [morning/afternoon], my name is <span class="hl-name">REP_NAME</span> calling from <span class="hl">JAYISAAC AI Automation</span>. I apologize for the interruption — I\'ll be brief. I\'m reaching out to a select number of <span class="hl">'+d.name.toLowerCase()+'</span> in the area, and I wanted to introduce a service that\'s been helping businesses like yours capture more leads and stop missing calls. Do you have just 30 seconds for me to explain?"',
+      tip:'Keep your tone calm, warm, and unhurried. The phrase "select number" implies exclusivity without being pushy. Pause fully after your question and let them respond — do not fill the silence.',
+      responses:[
+        {emoji:'✅',title:'Sure, go ahead',sub:'Time granted — go to pitch',type:'pos',next:'pitch'},
+        {emoji:'🤔',title:'What\'s this about?',sub:'Curious — go straight to pitch',type:'neu',next:'pitch'},
+        {emoji:'❌',title:'Not interested / busy',sub:'Hard brush-off',type:'neg',next:'obj_no_time'},
+        {emoji:'📱',title:'Goes to voicemail',sub:'No answer',type:'neu',next:'voicemail'}
+      ]
+    },
+    pitch:{
+      id:'pitch', stage:'Pitch', progress:25, title:'The 30-Second Pitch',
+      text:'"So I help <span class="hl">'+d.name.toLowerCase()+'</span> stop losing jobs to missed calls. We set up an AI receptionist that answers your phone <span class="hl">24/7</span> — books appointments, handles after-hours, captures every lead while you\'re on a job. Quick question — <span class="hl">'+d.painLine+'</span>"',
+      stat:d.statLine,
+      tip:'End on a question specific to their trade — gets them talking about their own pain. Don\'t rush. The question lands harder with a beat of silence before it.',
+      afterHours:d.afterHours,
+      responses:[
+        {emoji:'🔥',title:'Yeah that\'s a real problem',sub:'Pain confirmed — go to demo close',type:'pos',next:'demo_close'},
+        {emoji:'👤',title:'I have someone answering',sub:'Think they\'re covered',type:'neu',next:'obj_receptionist'},
+        {emoji:'💰',title:'How much does it cost?',sub:'Early price question',type:'neu',next:'obj_price_early'},
+        {emoji:'❌',title:'Not interested',sub:'Flat rejection',type:'neg',next:'obj_not_interested'}
+      ]
+    },
+    demo_close:{
+      id:'demo_close', stage:'Demo Close', progress:48, title:'The Hold + Merge Close',
+      text:'"Give me two seconds — I\'m going to put you on a brief hold and add our demo line to this call. You\'ll hear exactly what your customers experience when they call your business after hours. Takes about 60 seconds."',
+      tip:'Don\'t ask for permission — just say you\'re doing it. Confident and smooth. They stay on the line the whole time which feels more premium than any text or callback.',
+      responses:[
+        {emoji:'✅',title:'Okay sure / go ahead',sub:'Put them on hold — dial Retell now',type:'pos',next:'demo_merge'},
+        {emoji:'🕐',title:'Not right now, busy',sub:'Timing issue',type:'neu',next:'callback_set'},
+        {emoji:'❌',title:'No thanks',sub:'Declining',type:'neg',next:'obj_not_interested'}
+      ]
+    },
+    demo_merge:{
+      id:'demo_merge', stage:'Merging Call', progress:55, title:'⚡ Hold + Merge — Do This Now',
+      text:'<strong style="color:var(--accent)">In Quo — right now:</strong><br><br><div style="margin-top:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--text);line-height:2"><span style="color:var(--accent);font-weight:700">1</span> — Tap <strong>Hold</strong> to put them on hold<br><span style="color:var(--accent);font-weight:700">2</span> — Tap the <strong>+ button</strong> top right<br><span style="color:var(--accent);font-weight:700">3</span> — Dial your <strong>Retell demo number</strong><br><span style="color:var(--accent);font-weight:700">4</span> — Wait for Nico to answer<br><span style="color:var(--accent);font-weight:700">5</span> — Tap <strong>Merge Calls</strong></div><br>All three of you are now live. Stay silent — let Nico run for 60 seconds. Drop the Retell line after.',
+      tip:'Don\'t talk over Nico. Let the prospect interact with it naturally. After the demo ends, drop Retell and come back: "So — that\'s what your customers hear instead of voicemail. What\'d you think?"',
+      responses:[
+        {emoji:'✅',title:'Merged — Nico is running',sub:'Let demo run — drop Retell after 60 sec',type:'pos',next:'demo_live'},
+        {emoji:'❌',title:'Technical issue / couldn\'t merge',sub:'Fallback — send them the number by text',type:'neg',next:'demo_sent'}
+      ]
+    },
+    demo_sent:{
+      id:'demo_sent', stage:'Demo Sent', progress:58, title:'📲 Fallback — Text The Demo Number',
+      text:'<strong style="color:var(--accent)">Text them the demo number right now while still on the call.</strong><br><br><div style="margin-top:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;font-family:\'JetBrains Mono\',monospace;font-size:13px;line-height:1.7;color:var(--text)">Hey [Name], it\'s REP_NAME — here\'s that demo number: <span style="color:var(--accent)">[YOUR RETELL NUMBER]</span>. Give it a call when you get 60 seconds. Talk soon.</div><br>Then say on the call:<br><br>"I just sent that over — give it a call whenever you get a minute and let me know what you think."',
+      tip:'Confirm they got the text before hanging up. If they\'re happy to call it right then while you wait — even better. Don\'t pressure though.',
+      responses:[
+        {emoji:'✅',title:'Got it — calling it now',sub:'Wait on the line',type:'pos',next:'demo_live'},
+        {emoji:'📅',title:'I\'ll call it later today',sub:'Soft commit — follow up in 3 hours',type:'neu',next:'demo_followup'},
+        {emoji:'🤔',title:'What is it exactly?',sub:'Needs more context',type:'neu',next:'demo_explain'}
+      ]
+    },
+    demo_explain:{
+      id:'demo_explain', stage:'Demo', progress:60, title:'What Is It Exactly?',
+      text:'"It\'s a live phone number powered by AI — same technology we\'d set up for your business. When you call it, it answers like a real receptionist and handles the conversation naturally. It\'s not a recording — it\'s live, right now."',
+      tip:'Keep it simple. Don\'t say "Retell" or get technical. They just need to know it\'s real and interactive — not a voicemail or recording.',
+      responses:[
+        {emoji:'📞',title:'Okay I\'ll give it a call',sub:'Committed — follow up after',type:'pos',next:'demo_followup'},
+        {emoji:'❌',title:'Not interested',sub:'Declining',type:'neg',next:'obj_not_interested'}
+      ]
+    },
+    demo_followup:{
+      id:'demo_followup', stage:'Follow Up', progress:63, title:'📞 Following Up After Demo',
+      text:'"Hey [Name] — just following up. Did you get a chance to give that demo a call? What\'d you think?"',
+      tip:'Call back within 2–3 hours if they said later today. Text first if no answer, then call. Same day follow-up or the lead goes cold — do not wait until tomorrow.',
+      responses:[
+        {emoji:'🔥',title:'Loved it / That\'s impressive',sub:'Hot — go to close',type:'pos',next:'close'},
+        {emoji:'💰',title:'How much is it?',sub:'Buying signal — go to close',type:'pos',next:'close'},
+        {emoji:'😐',title:'It was okay / Not bad',sub:'Lukewarm — handle it',type:'neu',next:'obj_lukewarm'},
+        {emoji:'🤖',title:'Sounded too robotic',sub:'Voice objection',type:'neg',next:'obj_voice'},
+        {emoji:'👋',title:'Haven\'t called it yet',sub:'Re-commit or reschedule',type:'neu',next:'callback_set'},
+        {emoji:'❌',title:'Not for me',sub:'Post-demo rejection',type:'neg',next:'obj_not_interested'}
+      ]
+    },
+    demo_live:{
+      id:'demo_live', stage:'Demo Live', progress:65, title:'⚡ They\'re Calling It Now — Wait',
+      text:'<strong style="color:var(--accent)">Stay on the line. They\'re calling the demo number now.</strong><br><br>After they hang up from the demo, say:<br><br>"So — that\'s exactly what your customers would hear when they call you after hours instead of getting voicemail. What\'d you think?"',
+      tip:'Go completely silent after "what\'d you think?" Don\'t fill the gap. Their first reaction tells you everything. If they say anything positive — even "it\'s pretty good" — go straight to the close.',
+      responses:[
+        {emoji:'🔥',title:'That\'s impressive / I love it',sub:'Hot — close now',type:'pos',next:'close'},
+        {emoji:'💰',title:'How much is it?',sub:'Buying signal — go to close',type:'pos',next:'close'},
+        {emoji:'😐',title:'It\'s okay / Not bad',sub:'Lukewarm — handle it',type:'neu',next:'obj_lukewarm'},
+        {emoji:'🤖',title:'Sounds too robotic',sub:'Voice objection',type:'neg',next:'obj_voice'},
+        {emoji:'❌',title:'Not for me',sub:'Post-demo rejection',type:'neg',next:'obj_not_interested'}
+      ]
+    },
+    close:{
+      id:'close', stage:'Close', progress:82, title:'The Close',
+      text:'"So we have three tiers depending on what you need. Most guys start at <span class="hl-price">$297/month</span> — 24/7 answering, appointment booking, full after-hours coverage. We get you live in <span class="hl">24 to 48 hours</span>. Want to just get you set up today?"',
+      tip:'Lead with $297. Don\'t list all three tiers unless they ask. Silence after "today?" is your single most powerful tool. Do not break it first — even if it\'s uncomfortable.',
+      responses:[
+        {emoji:'🏆',title:'Yes — let\'s do it',sub:'CLOSED',type:'pos',next:'outcome_win'},
+        {emoji:'🤔',title:'I need to think about it',sub:'Stall objection',type:'neu',next:'obj_think'},
+        {emoji:'💸',title:'Too expensive',sub:'Price objection at close',type:'neg',next:'obj_price_close'},
+        {emoji:'👥',title:'Need to ask my partner',sub:'Gatekeeper objection',type:'neu',next:'obj_gatekeeper'}
+      ]
+    },
+    obj_no_time:{
+      id:'obj_no_time', stage:'Objection', progress:12, title:'🚧 No Time',
+      text:'"Totally fair — I\'ll be one sentence. I help '+d.name.toLowerCase()+' stop losing jobs to missed calls. If I called you back at a better time, when works best — morning or afternoon?"',
+      tip:'Give them a binary choice for callback time — morning or afternoon. It\'s easier to say yes to than "when can I call you back?"',
+      responses:[
+        {emoji:'📅',title:'Call me at [time]',sub:'Callback booked',type:'pos',next:'callback_set'},
+        {emoji:'❌',title:'Just not interested',sub:'Final no — move on',type:'neg',next:'outcome_loss'}
+      ]
+    },
+    obj_receptionist:{
+      id:'obj_receptionist', stage:'Objection', progress:30, title:'🚧 Already Have Someone Answering',
+      text:'"That\'s great — so for after-hours calls, weekends, when your receptionist is sick or on lunch — who\'s catching those? Because that\'s usually where guys are losing leads without even realizing it."',
+      tip:'Don\'t fight the receptionist. Attack the gaps — after hours, weekends, sick days, holidays. Every business has them. Let them say it out loud themselves.',
+      responses:[
+        {emoji:'🔥',title:'Hmm, we do miss some',sub:'Pain opened — go to demo close',type:'pos',next:'demo_close'},
+        {emoji:'✅',title:'No, we\'re fully covered',sub:'Genuinely covered — exit clean',type:'neg',next:'outcome_loss'}
+      ]
+    },
+    obj_price_early:{
+      id:'obj_price_early', stage:'Objection', progress:32, title:'🚧 Price Question Early',
+      text:'"Fair question — starts at <span class="hl-price">$297/month</span>. But that number really doesn\'t mean anything until you hear how it sounds. What I\'d like to do is text you a demo number right now — call it when you have 60 seconds and you\'ll know immediately if it\'s even worth the conversation. Can I send that to you?"',
+      tip:'Price before the demo kills deals. The demo is what makes $297 feel obvious. Redirect every single time — do not negotiate price before they\'ve heard it.',
+      responses:[
+        {emoji:'📞',title:'Okay sure',sub:'Demo accepted',type:'pos',next:'demo_live'},
+        {emoji:'💸',title:'That\'s already too much',sub:'Hard price resistance',type:'neg',next:'obj_price_close'}
+      ]
+    },
+    obj_not_interested:{
+      id:'obj_not_interested', stage:'Objection', progress:35, title:'🚧 Not Interested',
+      text:'"Completely respect that. Last question before I let you go — is it the timing, or is it that missed calls just aren\'t a big enough problem for your business right now?"',
+      tip:'"Not interested" almost always means one specific thing they haven\'t said yet. Diagnose it before you give up. This question surfaces the real objection.',
+      responses:[
+        {emoji:'📅',title:'Timing is just bad right now',sub:'Not now — get a callback date',type:'neu',next:'callback_set'},
+        {emoji:'🤔',title:'Don\'t really see it as a problem',sub:'Needs education — keep going',type:'neu',next:'obj_no_pain'},
+        {emoji:'❌',title:'Just not for me',sub:'Hard final no — log it, move on',type:'neg',next:'outcome_loss'}
+      ]
+    },
+    obj_no_pain:{
+      id:'obj_no_pain', stage:'Objection', progress:38, title:'🚧 Don\'t See The Problem',
+      text:'"Totally get it. Quick test — next time you\'re on a job, check your missed calls. Most owners are shocked. <span class="hl-stat">'+d.urgencyLine+'</span> I\'ll shoot you a text — if you check your missed calls and it\'s more than you thought, just reply and we\'ll talk."',
+      tip:'Plant the seed and exit clean. Send the text immediately after hanging up. Some of your best clients will be the ones who text back 3 days later after seeing their missed call log.',
+      responses:[
+        {emoji:'📲',title:'Sure, send me the text',sub:'Soft yes — follow up in 48hrs',type:'pos',next:'callback_set'},
+        {emoji:'❌',title:'No thanks',sub:'Final no',type:'neg',next:'outcome_loss'}
+      ]
+    },
+    obj_send_info:{
+      id:'obj_send_info', stage:'Objection', progress:52, title:'🚧 Send Info First',
+      text:'"For sure — I\'ll shoot that over right now. Honest heads up though: most people who look at the website first don\'t really get it until they hear it. What if I send you the website link AND the demo number in the same text — you can do both at the same time and have the full picture?"',
+      tip:'Agree to send immediately — but bundle it with the demo. Send the info the second you hang up regardless. A person who gets info but no demo call is a dead lead.',
+      responses:[
+        {emoji:'📱',title:'Yeah text it over',sub:'Demo number sent — go to demo_sent',type:'pos',next:'demo_sent'},
+        {emoji:'📧',title:'Just send the info for now',sub:'Soft no — send site link, follow up 24hrs',type:'neu',next:'callback_set'}
+      ]
+    },
+    obj_lukewarm:{
+      id:'obj_lukewarm', stage:'Objection', progress:70, title:'🚧 Lukewarm After Demo',
+      text:'"It gets a lot better once it\'s trained on your actual business — your service area, how you book jobs, what you charge. What you heard was a generic demo. What specifically felt off to you?"',
+      tip:'Get them talking about specifics. The more they engage with details, the more they\'re mentally trying it on. Specificity = buying intent.',
+      responses:[
+        {emoji:'🤖',title:'The voice sounded robotic',sub:'Voice objection',type:'neu',next:'obj_voice'},
+        {emoji:'🔥',title:'Actually it\'s pretty solid',sub:'Warming up — go to close',type:'pos',next:'close'},
+        {emoji:'🤔',title:'Not sure it fits my business',sub:'Fit objection',type:'neu',next:'obj_fit'},
+        {emoji:'❌',title:'Still not for me',sub:'Exit gracefully',type:'neg',next:'obj_not_interested'}
+      ]
+    },
+    obj_voice:{
+      id:'obj_voice', stage:'Objection', progress:73, title:'🚧 Sounds Robotic',
+      text:'"That\'s the #1 thing that surprises people after they go live. Your customers don\'t know it\'s AI — they think it\'s a real receptionist. We\'ve had owners tell us their customers actually complimented \'the girl who answered the phone.\' The voice tech has come a really long way. The only real way to see it is to try it with your actual callers."',
+      tip:'Use that specific social proof story — the owner getting a compliment. It\'s concrete and memorable. Keep it short — don\'t over-explain.',
+      responses:[
+        {emoji:'✅',title:'Okay I\'m willing to try it',sub:'Back on track — close',type:'pos',next:'close'},
+        {emoji:'❌',title:'Still not convinced',sub:'Hard objection — exit clean',type:'neg',next:'outcome_loss'}
+      ]
+    },
+    obj_fit:{
+      id:'obj_fit', stage:'Objection', progress:72, title:'🚧 Not Sure It Fits My Business',
+      text:'"What does your current call flow look like? Like when someone calls you right now, walk me through what happens."',
+      tip:'Get them describing their own process out loud. They\'ll identify the gaps themselves — you won\'t have to point them out. Active listening here is everything.',
+      responses:[
+        {emoji:'🔥',title:'They describe gaps or issues',sub:'Pain confirmed — go to close',type:'pos',next:'close'},
+        {emoji:'😐',title:'Sounds pretty covered',sub:'Low pain — may not be a fit right now',type:'neg',next:'outcome_loss'}
+      ]
+    },
+    obj_think:{
+      id:'obj_think', stage:'Objection', progress:86, title:'🚧 Need to Think About It',
+      text:'"Totally — what\'s the main thing holding you back? Is it the price, or just not 100% sure it\'ll work for your specific business?"',
+      tip:'"Need to think" almost always means one specific thing they haven\'t said. Find out what it is before you leave. Guessing wrong burns the lead.',
+      responses:[
+        {emoji:'💸',title:'The price',sub:'Price objection — handle it',type:'neu',next:'obj_price_close'},
+        {emoji:'🤔',title:'Not sure it\'ll work for me',sub:'Doubt — address it directly',type:'neu',next:'obj_will_work'},
+        {emoji:'📅',title:'I\'ll call you back',sub:'Vague stall — lock in a specific time',type:'neu',next:'callback_set'}
+      ]
+    },
+    obj_price_close:{
+      id:'obj_price_close', stage:'Objection', progress:88, title:'🚧 Too Expensive',
+      text:'"I hear you. Think about it this way — if you\'re missing even <span class="hl">2 calls a month</span> that would\'ve been <span class="hl">'+d.jobValue+'</span> jobs, you\'re already losing more than it costs. We\'re at <span class="hl-price">$297</span>. And if it\'s not pulling its weight in the first 30 days, we\'ll figure it out together. The risk is on us."',
+      tip:'Reframe price as ROI using their own job values. Make the math undeniable and unemotional. Never drop your price — it signals the product isn\'t worth what you said it was.',
+      responses:[
+        {emoji:'✅',title:'That makes sense / okay',sub:'Objection handled — close',type:'pos',next:'close'},
+        {emoji:'📅',title:'Budget timing is just bad right now',sub:'Not now — set a follow-up date',type:'neu',next:'callback_set'},
+        {emoji:'❌',title:'No thanks',sub:'Final no — move on',type:'neg',next:'outcome_loss'}
+      ]
+    },
+    obj_will_work:{
+      id:'obj_will_work', stage:'Objection', progress:88, title:'🚧 Not Sure It\'ll Work',
+      text:'"That\'s exactly the right question. Here\'s how it works — we set it up, train it on your business, and you\'re live in 48 hours. If something\'s off, we fix it. You\'re not locked into anything crazy. What would it take for you to feel confident enough to just try it?"',
+      tip:'Ask them what it would take. Then give it to them if you can. Put the risk visibly on yourself — the lower their perceived risk, the easier yes becomes.',
+      responses:[
+        {emoji:'🏆',title:'Okay let\'s try it',sub:'CLOSED',type:'pos',next:'outcome_win'},
+        {emoji:'👥',title:'I want to talk to someone using it',sub:'Needs social proof',type:'neu',next:'obj_social_proof'},
+        {emoji:'❌',title:'Not ready',sub:'Exit clean',type:'neg',next:'outcome_loss'}
+      ]
+    },
+    obj_social_proof:{
+      id:'obj_social_proof', stage:'Objection', progress:90, title:'🚧 Wants Social Proof',
+      text:'"Completely fair — I\'ll connect you with a client in a similar trade. Give me until [tomorrow/end of week] to set that up and I\'ll call you back with a name and number directly. Sound good?"',
+      tip:'If you don\'t have clients yet, be honest: "We\'re early stage — that\'s exactly why pricing is where it is right now." Transparency at this stage builds more trust than any case study.',
+      responses:[
+        {emoji:'✅',title:'Yeah that works',sub:'Callback with social proof booked',type:'pos',next:'callback_set'},
+        {emoji:'❌',title:'Not interested anymore',sub:'Final no',type:'neg',next:'outcome_loss'}
+      ]
+    },
+    obj_gatekeeper:{
+      id:'obj_gatekeeper', stage:'Objection', progress:88, title:'🚧 Need to Ask Partner',
+      text:'"That makes total sense — you\'re running it together, that\'s the right call. When\'s a time where I can get you both on a quick call? Takes 10 minutes, I\'ll walk you through everything and you can both ask anything you want."',
+      tip:'Don\'t fight it — book a joint call with both decision makers. Get a SPECIFIC day and time. "Sometime next week" doesn\'t happen. "Thursday at 2pm" does.',
+      responses:[
+        {emoji:'📅',title:'We can do [day] at [time]',sub:'Joint callback booked — both decision makers',type:'pos',next:'callback_set'},
+        {emoji:'🤔',title:'I\'ll get back to you',sub:'Vague — try one more time to lock a time',type:'neu',next:'callback_set'}
+      ]
+    },
+    voicemail:{
+      id:'voicemail', stage:'Voicemail', progress:5, title:'📱 Leave a Voicemail',
+      text:'"Hello, this is <span class="hl-name">REP_NAME</span> calling from JAYISAAC AI Automation. I\'ll keep this brief — I work with '+d.name.toLowerCase()+' to help them stop missing calls when they\'re busy on a job. I\'ll follow up with a quick text as well. No obligation — just reach out if you\'d like to learn more. Have a great day."',
+      tip:'Under 20 seconds. Text them immediately after with the same message shorter. Texts get way more responses than voicemails — the voicemail just primes them to recognize your number.',
+      responses:[
+        {emoji:'➡️',title:'Left voicemail — on to the next',sub:'Log it and dial',type:'neu',next:'outcome_loss'}
+      ]
+    },
+    callback_set:{
+      id:'callback_set', stage:'Callback', progress:96, title:'📅 Lock In the Callback',
+      text:'"Perfect — so I\'ve got you down for <span class="hl">[DAY]</span> at <span class="hl">[TIME]</span>. I\'ll call from this same number. Before I let you go — what\'s the best number to reach you at, and can I send a quick text reminder the morning of?"',
+      tip:'Always confirm the number. Always offer the reminder text. Send it the evening before AND the morning of. Callbacks with reminders convert at 3x the rate of those without.',
+      responses:[
+        {emoji:'📅',title:'Callback confirmed',sub:'Log it — dial the next one',type:'pos',next:'outcome_cb'}
+      ]
+    },
+    outcome_win:{id:'outcome_win',type:'win'},
+    outcome_loss:{id:'outcome_loss',type:'loss'},
+    outcome_cb:{id:'outcome_cb',type:'cb'}
+  };
+}
+
+var currentInd = null;
+var currentScript = null;
+var callPath = [];
+var sessionLog = [];
+var stats = {total:0, wins:0, losses:0, cbs:0};
+
+function getRepName() {
+  var v = document.getElementById('callerName').value.trim();
+  return v || 'YOUR NAME';
+}
+function getCity() {
+  var v = document.getElementById('callerCity').value.trim();
+  return v || 'your city';
+}
+function injectVars(text) {
+  return text.replace(/REP_NAME/g, '<span class="hl-name">' + getRepName() + '</span>');
+}
+
+function goTo(nodeId) {
+  if (!currentScript) return;
+  var node = currentScript[nodeId];
+  if (!node) return;
+  if (node.type) { renderOutcome(node.type); return; }
+  callPath.push(node.stage + ': ' + node.title.replace(/^[🚧⚡📱📅]\s*/,''));
+  var center = document.getElementById('center');
+  var extraHTML = '';
+  if (node.stat) {
+    extraHTML += '<div class="stat-callout"><div class="stat-callout-icon">📊</div><div class="stat-callout-text"><strong>INDUSTRY STAT</strong> — ' + node.stat + '</div></div>';
+  }
+  if (node.afterHours) {
+    extraHTML += '<div class="ah-box"><strong>Common after-hours calls in this trade</strong>' + node.afterHours + '</div>';
+  }
+  var html = '<div class="prog-wrap">'
+    + '<div class="prog-meta"><div class="prog-stage">' + node.stage + '</div><div class="prog-pct">' + node.progress + '%</div></div>'
+    + '<div class="prog-track"><div class="prog-fill" style="width:' + node.progress + '%"></div></div>'
+    + '</div>'
+    + '<div class="script-block">'
+    + '<div class="script-card">'
+    + '<div class="card-eyebrow">Say This</div>'
+    + '<div class="script-text">' + injectVars(node.text) + '</div>'
+    + extraHTML
+    + (node.tip ? '<div class="tip-card"><div class="tip-icon">💡</div><div class="tip-text"><strong>PRO TIP —</strong> ' + node.tip + '</div></div>' : '')
+    + '</div>'
+    + '<div class="resp-section"><div class="resp-label">They Said...</div><div class="resp-grid" id="respGrid"></div></div>'
+    + '<div class="nav-strip"><button class="nav-btn" id="restartBtn">↩ Restart Call</button><button class="nav-btn" id="switchBtn">⇄ Switch Industry</button></div>'
+    + '</div>';
+  center.innerHTML = html;
+  var grid = document.getElementById('respGrid');
+  node.responses.forEach(function(r) {
+    var btn = document.createElement('button');
+    btn.className = 'resp-btn ' + r.type;
+    btn.dataset.next = r.next;
+    btn.innerHTML = '<span class="resp-emoji">' + r.emoji + '</span>'
+      + '<div class="resp-body"><div class="resp-title">' + r.title + '</div><div class="resp-sub">' + r.sub + '</div></div>'
+      + '<span class="resp-arrow">›</span>';
+    btn.addEventListener('click', function() { goTo(this.dataset.next); });
+    grid.appendChild(btn);
+  });
+  document.getElementById('restartBtn').addEventListener('click', function() { callPath = []; goTo('opener'); });
+  document.getElementById('switchBtn').addEventListener('click', showSelectScreen);
+}
+
+function renderOutcome(type) {
+  var now = new Date();
+  var t = now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  var cfg = {
+    win:{emoji:'🏆',title:'CLOSED!',cls:'win',label:'Closed',sub:'Lock in the details, send onboarding, get them live in 48 hours.'},
+    loss:{emoji:'👋',title:'NOT THIS ONE',cls:'loss',label:'No',sub:'Log it, move on. Every no gets you one call closer to a yes.'},
+    cb:{emoji:'📅',title:'CALLBACK BOOKED',cls:'cb',label:'Callback',sub:'Set your reminder. Text them a confirmation right now.'}
+  };
+  var c = cfg[type];
+  var ind = INDUSTRIES[currentInd];
+  stats.total++;
+  if (type==='win') stats.wins++;
+  else if (type==='loss') stats.losses++;
+  else stats.cbs++;
+  updateStats();
+  var path = callPath.slice();
+  sessionLog.unshift({type:type,time:t,industry:ind.name,path:path});
+  callPath = [];
+  updateLog();
+  var pathHTML = path.map(function(s) {
+    return '<div class="path-entry"><span class="path-dot">●</span>' + s + '</div>';
+  }).join('');
+  document.getElementById('center').innerHTML = '<div class="outcome-screen">'
+    + '<div class="outcome-emoji">' + c.emoji + '</div>'
+    + '<div class="outcome-title ' + c.cls + '">' + c.title + '</div>'
+    + '<div class="outcome-sub">' + c.sub + '</div>'
+    + '<div class="path-log"><h4>Call Path</h4>' + pathHTML + '<div class="path-entry" style="color:var(--text3)"><span class="path-dot" style="opacity:0">●</span>Ended ' + t + '</div></div>'
+    + '<div style="display:flex;gap:10px;justify-content:center">'
+    + '<button class="btn-primary" id="nextCallBtn">Next Call →</button>'
+    + '<button class="nav-btn" id="switchBtn2">⇄ Switch Industry</button>'
+    + '</div></div>';
+  document.getElementById('nextCallBtn').addEventListener('click', function() { callPath=[]; goTo('opener'); });
+  document.getElementById('switchBtn2').addEventListener('click', showSelectScreen);
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = stats.total;
+  document.getElementById('statWins').textContent = stats.wins;
+  document.getElementById('statLoss').textContent = stats.losses;
+  document.getElementById('statCbs').textContent = stats.cbs;
+  var rate = stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) + '%' : '—';
+  document.getElementById('convRate').textContent = rate;
+}
+
+function updateLog() {
+  var el = document.getElementById('logEntries');
+  if (!sessionLog.length) { el.innerHTML = '<div class="empty-log">No calls yet.<br>Start dialing.</div>'; return; }
+  var icons = {win:'🏆',loss:'👋',cb:'📅'};
+  var labels = {win:'Closed',loss:'No',cb:'Callback'};
+  el.innerHTML = sessionLog.slice(0,20).map(function(e,i) {
+    return '<div class="log-pill">'
+      + '<div class="log-dot ' + e.type + '"></div>'
+      + icons[e.type] + ' #' + (stats.total - i) + ' ' + labels[e.type]
+      + '<span class="log-ind">' + e.industry + '</span>'
+      + '<span class="log-time">' + e.time + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function selectIndustry(ind) {
+  currentInd = ind;
+  currentScript = buildScript(ind);
+  callPath = [];
+  document.querySelectorAll('.ind-btn[data-industry]').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.industry === ind);
+  });
+  var d = INDUSTRIES[ind];
+  document.getElementById('topbarStatus').textContent = d.icon + ' ' + d.name.toUpperCase() + ' — NORTH AMERICA';
+  document.getElementById('resetBtn').style.display = '';
+  goTo('opener');
+}
+
+function showSelectScreen() {
+  currentInd = null; currentScript = null; callPath = [];
+  document.querySelectorAll('.ind-btn[data-industry]').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('topbarStatus').textContent = 'SELECT AN INDUSTRY TO BEGIN';
+  document.getElementById('resetBtn').style.display = 'none';
+  document.getElementById('center').innerHTML = '<div class="select-screen">'
+    + '<div style="font-size:52px;margin-bottom:14px">📞</div>'
+    + '<h1>Cold Call<br><span>Command Center</span></h1>'
+    + '<p>North America-wide. Pick your industry, enter your city, and run the script. Every response, every objection — fully mapped.</p>'
+    + '<div class="ind-grid" id="quickGrid"></div>'
+    + '</div>';
+  buildQuickGrid();
+}
+
+function buildQuickGrid() {
+  var grid = document.getElementById('quickGrid');
+  if (!grid) return;
+  Object.keys(INDUSTRIES).forEach(function(key) {
+    var d = INDUSTRIES[key];
+    var card = document.createElement('div');
+    card.className = 'ind-card';
+    card.dataset.industry = key;
+    card.innerHTML = '<div class="ic-icon">' + d.icon + '</div><div class="ic-name">' + d.name + '</div>';
+    card.addEventListener('click', function() { selectIndustry(this.dataset.industry); });
+    grid.appendChild(card);
+  });
+}
+
+document.querySelectorAll('.ind-btn[data-industry]').forEach(function(btn) {
+  btn.addEventListener('click', function() { selectIndustry(this.dataset.industry); });
+});
+document.getElementById('resetBtn').addEventListener('click', showSelectScreen);
+buildQuickGrid();
+</script>
+</body>
+</html>
